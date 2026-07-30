@@ -22,56 +22,37 @@ function secondsToMinutesSeconds(seconds) {
 
 async function getSongs(folder) {
     currFolder = folder;
-    let a = await fetch(`/${folder}/`);
-    let response = await a.text();
-    //console.log(response);
 
-    let div = document.createElement("div");
-    div.innerHTML = response;
-    let lis = div.getElementsByTagName("li");
-    console.log(lis);
-    let as = div.getElementsByTagName("a");
-    songs = [];
-    for (let index = 0; index < as.length; index++) {
-        const element = as[index];
-        if (element.href.endsWith(".mp3")) {
-            songs.push(element.href.split(`/${folder}/`)[1]);
-        }
-    }
+    // songs.json fetch karo
+    let a = await fetch(`/${folder}/songs.json`);
+    songs = await a.json();
 
-
-    //get the list of all songs
-
+    // Get the list of all songs
     let songUl = document.querySelector(".songList").getElementsByTagName("ul")[0];
     songUl.innerHTML = "";
-    for (song of songs) {
-        songUl.innerHTML = songUl.innerHTML + `<li>
+
+    for (let song of songs) {
+        songUl.innerHTML += `<li>
                             <img src="img/music.svg">
                             <div class="info">
-                                <div>${song.replaceAll("%20", " ")}</div>
+                                <div>${decodeURIComponent(song)}</div>
                                 <div>Suvin Garg</div>
                             </div>
                             <div class="playnow">
                                 <span>Play Now</span>
                             
                                 <img class="invert playnow" src="img/play.svg">
-                            </div></li> `;
-
-
+                            </div></li>`;
     }
 
-    //Attach an event listener to each song
-
+    // Attach an event listener to each song
     Array.from(document.querySelector(".songList").getElementsByTagName("li")).forEach(e => {
-        e.addEventListener("click", element => {
-            console.log(e.querySelector(".info").firstElementChild.innerHTML);
+        e.addEventListener("click", () => {
             playMusic(e.querySelector(".info").firstElementChild.innerHTML.trim());
-        })
-
+        });
     });
 
     return songs;
-
 }
 const playMusic = (track, pause = false) => {
     //let audio=new Audio(("/songs/"+track));
@@ -90,50 +71,32 @@ const playMusic = (track, pause = false) => {
 }
 
 async function displayAlbums() {
-    let a = await fetch(`/songs/`);
-    let response = await a.text();
-    let div = document.createElement("div");
-    div.innerHTML = response;
 
-    let anchors = div.getElementsByTagName("a");
+    let a = await fetch("/songs/albums.json");
+    let folders = await a.json();
+
     let cardContainer = document.querySelector(".cardContainer");
+    cardContainer.innerHTML = "";
 
-    let array = Array.from(anchors)
-    for (let index = 0; index < array.length; index++) {
-        const e = array[index];
+    for (let folder of folders) {
 
+        // Get metadata of the folder
+        let a = await fetch(`/songs/${folder}/info.json`);
+        let response = await a.json();
 
-        if (e.href.includes("/songs/")) {
-            let folder = e.href.split("/").slice(-1)[0];
-
-            //get the metadata of the folder
-
-            let a = await fetch(`/songs/${folder}/info.json`);
-            let response = await a.json();
-            console.log(response);
-
-            cardContainer.innerHTML = cardContainer.innerHTML + `<div  data-folder="${folder}" class="card">
+        cardContainer.innerHTML += `<div data-folder="${folder}" class="card">
                         <div class="play">
                             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-                                <!-- Green circular background -->
-                                <circle cx="18" cy="18" r="18" fill="#1DB954" />
-
-                                <!-- Font Awesome play icon -->
+                                <circle cx="18" cy="18" r="18" fill="#1DB954"/>
                                 <path fill="#000" transform="translate(7 7) scale(0.034)"
-                                    d="M187.2 100.9C174.8 94.1 159.8 94.4 147.6 101.6C135.4 108.8 128 121.9 128 136L128 504C128 518.1 135.5 531.2 147.6 538.4C159.7 545.6 174.8 545.9 187.2 539.1L523.2 355.1C536 348.1 544 334.6 544 320C544 305.4 536 291.9 523.2 284.9L187.2 100.9z" />
+                                d="M187.2 100.9C174.8 94.1 159.8 94.4 147.6 101.6C135.4 108.8 128 121.9 128 136L128 504C128 518.1 135.5 531.2 147.6 538.4C159.7 545.6 174.8 545.9 187.2 539.1L523.2 355.1C536 348.1 544 334.6 544 320C544 305.4 536 291.9 523.2 284.9L187.2 100.9z"/>
                             </svg>
                         </div>
                         <img src="/songs/${folder}/cover.jpg">
                         <h3>${response.title}</h3>
                         <p>${response.description}</p>
-                    </div>`
-
-        }
+                    </div>`;
     }
-
-
-
-
 }
 
 async function main() {
